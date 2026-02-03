@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  getQueueInfo,
+  getQueueBySlug,
   takeTicket,
   type QueueInfo,
   type TicketInfo,
@@ -13,9 +13,9 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
 
 export default function QueuePage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const queueId = Number(id);
+  const [queueId, setQueueId] = useState<number | null>(null);
 
   const { queueInfo, setQueueInfo, myTicket, setMyTicket, updateFromWs } =
     useQueueStore();
@@ -26,13 +26,15 @@ export default function QueuePage() {
   // Load queue info
   useEffect(() => {
     async function load() {
+      if (!slug) return;
       try {
-        const info = await getQueueInfo(queueId);
+        const info = await getQueueBySlug(slug);
         setQueueInfo(info);
+        setQueueId(info.id);
 
         // Check for existing ticket in localStorage
         const stored = loadTicketFromStorage();
-        if (stored && stored.queueId === queueId) {
+        if (stored && stored.queueId === info.id) {
           setMyTicket(stored);
         }
       } catch (error) {
@@ -43,7 +45,7 @@ export default function QueuePage() {
       }
     }
     load();
-  }, [queueId, setQueueInfo, setMyTicket]);
+  }, [slug, setQueueInfo, setMyTicket]);
 
   // WebSocket for real-time updates
   const handleWsMessage = useCallback(
@@ -63,12 +65,14 @@ export default function QueuePage() {
   );
 
   useWebSocket({
-    queueId,
+    queueId: queueId ?? 0,
     onMessage: handleWsMessage,
+    enabled: queueId !== null,
   });
 
   // Handle take ticket
   const handleTakeTicket = async () => {
+    if (!queueId) return;
     setTaking(true);
     try {
       let pushSubscription: string | undefined;

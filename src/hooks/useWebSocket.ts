@@ -12,6 +12,7 @@ interface UseWebSocketOptions {
   onMessage: (message: WSMessage) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  enabled?: boolean;
 }
 
 export function useWebSocket({
@@ -19,6 +20,7 @@ export function useWebSocket({
   onMessage,
   onConnect,
   onDisconnect,
+  enabled = true,
 }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
@@ -60,6 +62,8 @@ export function useWebSocket({
   }, [queueId, onMessage, onConnect, onDisconnect]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     connect();
 
     // Ping every 25 seconds to keep connection alive
@@ -76,7 +80,7 @@ export function useWebSocket({
       }
       wsRef.current?.close();
     };
-  }, [connect]);
+  }, [connect, enabled]);
 
   return wsRef;
 }
