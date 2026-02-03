@@ -274,6 +274,7 @@ export default function QueuesListPage() {
               <div className="flex items-center border-t border-white/5">
                 <Link
                   to={`/qrcode/${queue.id}`}
+                  target="_blank"
                   className="flex-1 flex items-center justify-center gap-2 py-3 text-gray-400 hover:text-white hover:bg-white/[0.03] transition-colors"
                 >
                   <QrCode className="w-4 h-4" />
@@ -282,6 +283,7 @@ export default function QueuesListPage() {
                 <div className="w-px h-8 bg-white/5" />
                 <Link
                   to={`/display/${queue.id}`}
+                  target="_blank"
                   className="flex-1 flex items-center justify-center gap-2 py-3 text-gray-400 hover:text-white hover:bg-white/[0.03] transition-colors"
                 >
                   <Monitor className="w-4 h-4" />
@@ -337,12 +339,14 @@ export default function QueuesListPage() {
                   <div className="flex items-center gap-1">
                     <Link
                       to={`/qrcode/${queue.id}`}
+                      target="_blank"
                       className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
                       <QrCode className="w-4 h-4" />
                     </Link>
                     <Link
                       to={`/display/${queue.id}`}
+                      target="_blank"
                       className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
                       <Monitor className="w-4 h-4" />

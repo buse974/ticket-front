@@ -183,7 +183,7 @@ export default function QueueDashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to={`/qrcode/${queue.id}`}>
+          <Link to={`/qrcode/${queue.id}`} target="_blank">
             <Button
               variant="outline"
               size="sm"
@@ -193,7 +193,7 @@ export default function QueueDashboardPage() {
               QR Code
             </Button>
           </Link>
-          <Link to={`/display/${queue.id}`}>
+          <Link to={`/display/${queue.id}`} target="_blank">
             <Button
               variant="outline"
               size="sm"
