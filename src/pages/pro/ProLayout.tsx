@@ -1,59 +1,37 @@
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
-
-// Placeholder icons, similar to the screenshot
-const IconLayoutDashboard = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect width="7" height="9" x="3" y="3" rx="1" />
-    <rect width="7" height="5" x="14" y="3" rx="1" />
-    <rect width="7" height="9" x="14" y="12" rx="1" />
-    <rect width="7" height="5" x="3" y="16" rx="1" />
-  </svg>
-);
-
-const IconList = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="8" x2="21" y1="6" y2="6" />
-    <line x1="8" x2="21" y1="12" y2="12" />
-    <line x1="8" x2="21" y1="18" y2="18" />
-    <line x1="3" x2="3.01" y1="6" y2="6" />
-    <line x1="3" x2="3.01" y1="12" y2="12" />
-    <line x1="3" x2="3.01" y1="18" y2="18" />
-  </svg>
-);
+import {
+  LayoutDashboard,
+  ListTodo,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  User,
+  Bell,
+  Search,
+} from "lucide-react";
 
 const navItems = [
   {
     name: "Vue d'ensemble",
     path: "/dashboard",
-    icon: IconLayoutDashboard,
+    icon: LayoutDashboard,
+    exact: true,
   },
-  { name: "Files d'attente", path: "/dashboard", icon: IconList },
+  {
+    name: "Files d'attente",
+    path: "/dashboard/queues",
+    icon: ListTodo,
+  },
+  {
+    name: "Paramètres",
+    path: "/dashboard/settings",
+    icon: Settings,
+  },
 ];
 
 export default function ProLayout({ children }: { children: ReactNode }) {
@@ -61,6 +39,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
     useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
@@ -73,10 +52,17 @@ export default function ProLayout({ children }: { children: ReactNode }) {
     navigate("/login");
   };
 
+  const isActiveRoute = (path: string, exact?: boolean) => {
+    if (exact) {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
+
   if (!isInitialized) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#09090B]">
-        <div className="w-16 h-16 border-4 border-gray-700 border-t-violet-500 rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-gray-700 border-t-violet-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -84,46 +70,132 @@ export default function ProLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen bg-[#09090B] text-gray-200">
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r border-gray-800 flex flex-col">
-        <div className="h-16 flex items-center px-6 font-bold text-lg">
-          Byewait
+      <aside
+        className={`${
+          sidebarCollapsed ? "w-[72px]" : "w-64"
+        } flex-shrink-0 border-r border-white/5 bg-[#0a0a0f] flex flex-col transition-all duration-300 ease-in-out`}
+      >
+        {/* Logo */}
+        <div className="h-16 flex items-center px-4 border-b border-white/5">
+          <Link to="/dashboard" className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center font-bold text-white text-lg">
+              B
+            </div>
+            {!sidebarCollapsed && (
+              <span className="font-bold text-lg tracking-tight">Byewait</span>
+            )}
+          </Link>
         </div>
-        <div className="px-4 py-2">
-          <div className="px-4 py-2 rounded-lg bg-gray-900">
-            <span className="text-sm text-gray-400">Bienvenue</span>
-            <p className="font-semibold">{professional?.name}</p>
-          </div>
-        </div>
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
-                location.pathname === item.path
-                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold"
-                  : "hover:bg-gray-800"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {navItems.map((item) => {
+            const isActive = isActiveRoute(item.path, item.exact);
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
+                  isActive
+                    ? "bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 text-white border border-violet-500/30"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+                title={sidebarCollapsed ? item.name : undefined}
+              >
+                <item.icon
+                  className={`w-5 h-5 flex-shrink-0 ${
+                    isActive ? "text-violet-400" : "group-hover:text-violet-400"
+                  }`}
+                />
+                {!sidebarCollapsed && (
+                  <span className="font-medium">{item.name}</span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
+
+        {/* User section */}
+        <div className="p-3 border-t border-white/5">
+          {!sidebarCollapsed ? (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.03]">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {professional?.name}
+                </p>
+                <p className="text-xs text-gray-500">Pro</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Collapse button */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="m-3 p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors flex items-center justify-center"
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-5 h-5" />
+          ) : (
+            <ChevronLeft className="w-5 h-5" />
+          )}
+        </button>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 flex-shrink-0 border-b border-gray-800 flex items-center justify-end px-6">
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="hover:bg-gray-800 hover:text-white"
-          >
-            Déconnexion
-          </Button>
+        {/* Header */}
+        <header className="h-16 flex-shrink-0 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-xl flex items-center justify-between px-6">
+          {/* Search */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Rechercher..."
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+              />
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-gray-500">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </div>
+          </div>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2 ml-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-gray-400 hover:text-white hover:bg-white/5"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-violet-500 rounded-full" />
+            </Button>
+            <div className="w-px h-6 bg-white/10 mx-2" />
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="text-gray-400 hover:text-white hover:bg-white/5 gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Déconnexion</span>
+            </Button>
+          </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto p-6">{children}</div>
+        </main>
       </div>
     </div>
   );

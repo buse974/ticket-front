@@ -3,129 +3,43 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   getProfessionalQueue,
+  getQueueStats,
   completeTicket,
   markNoShow,
   callNextTicket,
   updateQueue,
   type ProfessionalQueue,
   type Ticket,
+  type QueueStats,
 } from "@/api/queue";
 import { useAuthStore } from "@/stores/authStore";
 import { useWebSocket, type WSMessage } from "@/hooks/useWebSocket";
 import { toast } from "sonner";
-
-const IconUsers = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-    />
-  </svg>
-);
-const IconCheck = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-  </svg>
-);
-const IconX = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M6 18L18 6M6 6l12 12"
-    />
-  </svg>
-);
-const IconLogout = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-    />
-  </svg>
-);
-
-const IconQrCode = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect width="5" height="5" x="3" y="3" rx="1" />
-    <rect width="5" height="5" x="16" y="3" rx="1" />
-    <rect width="5" height="5" x="3" y="16" rx="1" />
-    <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
-    <path d="M21 21v.01" />
-    <path d="M12 7v3a2 2 0 0 1-2 2H7" />
-    <path d="M3 12h.01" />
-    <path d="M12 3h.01" />
-    <path d="M12 16v.01" />
-    <path d="M16 12h1" />
-    <path d="M21 12h.01" />
-    <path d="M12 21h-1" />
-  </svg>
-);
-
-const IconTv = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect width="20" height="15" x="2" y="7" rx="2" ry="2" />
-    <polyline points="17 2 12 7 7 2" />
-  </svg>
-);
+import {
+  ArrowLeft,
+  QrCode,
+  Monitor,
+  Check,
+  X,
+  Users,
+  Ticket as TicketIcon,
+  Clock,
+  TrendingUp,
+  Wifi,
+  WifiOff,
+  ChevronRight,
+} from "lucide-react";
 
 export default function QueueDashboardPage() {
   const navigate = useNavigate();
   const { queueId: queueIdParam } = useParams<{ queueId: string }>();
   const queueId = Number(queueIdParam);
-  const { logout, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   const [queue, setQueue] = useState<ProfessionalQueue["queue"] | null>(null);
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
   const [waitingTickets, setWaitingTickets] = useState<Ticket[]>([]);
+  const [stats, setStats] = useState<QueueStats | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -143,10 +57,14 @@ export default function QueueDashboardPage() {
     }
     try {
       setLoading(true);
-      const queueData = await getProfessionalQueue(queueId);
+      const [queueData, statsData] = await Promise.all([
+        getProfessionalQueue(queueId),
+        getQueueStats(queueId),
+      ]);
       setQueue(queueData.queue);
       setCurrentTicket(queueData.currentTicket);
       setWaitingTickets(queueData.waitingTickets);
+      setStats(statsData);
     } catch (error) {
       console.error(error);
       toast.error("Erreur de chargement de la file d'attente.");
@@ -183,6 +101,7 @@ export default function QueueDashboardPage() {
       const result = await action(queueId);
       if (result.currentTicket !== undefined)
         setCurrentTicket(result.currentTicket);
+      if (result.stats) setStats(result.stats);
       toast.success(successMessage);
       await loadData();
     } catch (error) {
@@ -212,140 +131,218 @@ export default function QueueDashboardPage() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin"></div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="w-10 h-10 border-4 border-gray-700 border-t-violet-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!queue) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] text-white">
-        <div className="text-center">
-          <p>File d'attente non trouvée.</p>
-          <Link
-            to="/dashboard"
-            className="text-violet-400 hover:text-violet-300 mt-4 inline-block"
-          >
-            &larr; Retour au tableau de bord
-          </Link>
-        </div>
+      <div className="text-center py-16">
+        <p className="text-gray-400 mb-4">File d'attente non trouvée.</p>
+        <Link
+          to="/dashboard/queues"
+          className="text-violet-400 hover:text-violet-300"
+        >
+          &larr; Retour aux files
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden">
-      <header className="relative z-10 border-b border-white/5 bg-white/[0.02] backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/dashboard" className="text-white/60 hover:text-white">
-              &larr; Retour
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-white/40 hover:text-white hover:bg-white/10"
-            >
-              <IconLogout />
-            </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/dashboard/queues"
+            className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-white">{queue.name}</h1>
+              <span
+                className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                  queue.isActive
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                }`}
+              >
+                {queue.isActive ? "Ouverte" : "Fermée"}
+              </span>
+            </div>
+            <p className="text-gray-400 text-sm mt-1">
+              Gérez cette file d'attente en temps réel
+            </p>
           </div>
         </div>
-      </header>
+        <div className="flex items-center gap-2">
+          <Link to={`/qrcode/${queue.id}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/10 text-gray-300 hover:bg-white/5 gap-2"
+            >
+              <QrCode className="w-4 h-4" />
+              QR Code
+            </Button>
+          </Link>
+          <Link to={`/display/${queue.id}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/10 text-gray-300 hover:bg-white/5 gap-2"
+            >
+              <Monitor className="w-4 h-4" />
+              Écran
+            </Button>
+          </Link>
+        </div>
+      </div>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="space-y-6">
-          <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-              <h2 className="font-semibold text-white">{queue.name}</h2>
-              <div className="flex items-center gap-4">
-                <Link to={`/qrcode/${queue.id}`}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/60 flex items-center gap-2"
-                  >
-                    <IconQrCode className="w-4 h-4" />
-                    <span className="hidden sm:inline">QR Code</span>
-                  </Button>
-                </Link>
-                <Link to={`/display/${queue.id}`}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/60 flex items-center gap-2"
-                  >
-                    <IconTv className="w-4 h-4" />
-                    <span className="hidden sm:inline">Écran</span>
-                  </Button>
-                </Link>
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-violet-500/10">
+              <Users className="w-5 h-5 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">
+                {stats?.waiting || 0}
+              </p>
+              <p className="text-xs text-gray-500">En attente</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10">
+              <TicketIcon className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">
+                {stats?.totalToday || 0}
+              </p>
+              <p className="text-xs text-gray-500">Aujourd'hui</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10">
+              <Clock className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">
+                {stats?.avgWaitTime || 0}
+                <span className="text-sm font-normal text-gray-500">min</span>
+              </p>
+              <p className="text-xs text-gray-500">Attente moy.</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-red-500/10">
+              <TrendingUp className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">
+                {stats?.noShowRate || 0}
+                <span className="text-sm font-normal text-gray-500">%</span>
+              </p>
+              <p className="text-xs text-gray-500">No-show</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-white/40">
-                    Réservation à distance
-                  </span>
-                  <button
-                    onClick={() =>
-                      handleToggleRemoteBooking(queue.allowRemoteBooking)
-                    }
-                    className={`relative w-12 h-7 rounded-full transition-colors ${
-                      queue.allowRemoteBooking ? "bg-violet-600" : "bg-white/10"
+      {/* Main content grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Current ticket + Actions */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Current ticket card */}
+          <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+              <h2 className="font-semibold text-white">Ticket en cours</h2>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-2 text-sm text-gray-400">
+                  {queue.allowRemoteBooking ? (
+                    <>
+                      <Wifi className="w-4 h-4 text-emerald-400" />
+                      Réservation à distance
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="w-4 h-4" />
+                      Sur place uniquement
+                    </>
+                  )}
+                </span>
+                <button
+                  onClick={() =>
+                    handleToggleRemoteBooking(queue.allowRemoteBooking)
+                  }
+                  className={`relative w-11 h-6 rounded-full transition-colors ${
+                    queue.allowRemoteBooking ? "bg-violet-600" : "bg-white/10"
+                  }`}
+                >
+                  <div
+                    className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform ${
+                      queue.allowRemoteBooking ? "left-6" : "left-1"
                     }`}
-                  >
-                    <div
-                      className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-transform ${
-                        queue.allowRemoteBooking ? "left-6" : "left-1"
-                      }`}
-                    ></div>
-                  </button>
-                </div>
+                  />
+                </button>
               </div>
             </div>
 
             <div className="p-6">
-              <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                {/* Current number display */}
                 <div className="flex-shrink-0 text-center">
-                  <div className="text-sm text-white/40 mb-2">En cours</div>
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-3xl blur-2xl opacity-30"></div>
-                    <div className="relative w-40 h-40 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-3xl flex items-center justify-center">
-                      <span className="text-7xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+                    <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-3xl blur-2xl opacity-30" />
+                    <div className="relative w-32 h-32 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-3xl flex items-center justify-center">
+                      <span className="text-6xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
                         {currentTicket?.number || "-"}
                       </span>
                     </div>
                   </div>
+                  {currentTicket?.isRemote && (
+                    <span className="inline-flex items-center gap-1 mt-3 px-2 py-1 rounded-full bg-violet-500/10 text-violet-400 text-xs">
+                      <Wifi className="w-3 h-3" />À distance
+                    </span>
+                  )}
                 </div>
 
+                {/* Action buttons */}
                 <div className="flex-1 w-full space-y-3">
                   {currentTicket ? (
                     <>
                       <button
                         onClick={handleComplete}
                         disabled={actionLoading}
-                        className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                        className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                       >
-                        <div className="relative flex items-center justify-center gap-3 bg-[#0a0a0f] rounded-2xl px-6 py-4 group-hover:bg-emerald-500/10 transition-colors">
-                          <IconCheck />
+                        <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-4 group-hover:bg-emerald-500/10 transition-colors">
+                          <Check className="w-5 h-5" />
                           <span className="font-semibold text-lg">Terminé</span>
                         </div>
                       </button>
                       <button
                         onClick={handleNoShow}
                         disabled={actionLoading}
-                        className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                        className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                       >
-                        <div className="relative flex items-center justify-center gap-3 bg-[#0a0a0f] rounded-2xl px-6 py-4 group-hover:bg-amber-500/10 transition-colors">
-                          <IconX />
+                        <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-4 group-hover:bg-amber-500/10 transition-colors">
+                          <X className="w-5 h-5" />
                           <span className="font-semibold text-lg">Absent</span>
                         </div>
                       </button>
@@ -354,25 +351,31 @@ export default function QueueDashboardPage() {
                     <button
                       onClick={handleCallNext}
                       disabled={actionLoading || waitingTickets.length === 0}
-                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                     >
-                      <div className="relative flex items-center justify-center gap-3 bg-[#0a0a0f] rounded-2xl px-6 py-5 group-hover:bg-violet-500/10 transition-colors">
+                      <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-5 group-hover:bg-violet-500/10 transition-colors">
                         <span className="font-semibold text-xl">
                           {waitingTickets.length > 0
                             ? "Appeler le suivant"
                             : "Aucun en attente"}
                         </span>
+                        {waitingTickets.length > 0 && (
+                          <ChevronRight className="w-5 h-5" />
+                        )}
                       </div>
                     </button>
                   )}
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="px-6 py-4 border-t border-white/5">
+          {/* Waiting list */}
+          <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/5">
               <h2 className="font-semibold text-white">
                 File d'attente{" "}
-                <span className="ml-2 text-sm font-normal text-white/40">
+                <span className="text-gray-500 font-normal">
                   ({waitingTickets.length})
                 </span>
               </h2>
@@ -380,13 +383,13 @@ export default function QueueDashboardPage() {
             <div className="p-4">
               {waitingTickets.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center">
-                    <IconUsers />
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center">
+                    <Users className="w-7 h-7 text-gray-600" />
                   </div>
-                  <p className="text-white/40">Aucun ticket en attente</p>
+                  <p className="text-gray-500">Aucun ticket en attente</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3">
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3">
                   {waitingTickets.map((ticket, index) => (
                     <div
                       key={ticket.id}
@@ -399,8 +402,8 @@ export default function QueueDashboardPage() {
                       {index === 0 && (
                         <div className="absolute -top-1 -right-1">
                           <span className="flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-violet-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-violet-500" />
                           </span>
                         </div>
                       )}
@@ -412,13 +415,13 @@ export default function QueueDashboardPage() {
                         {ticket.number}
                       </div>
                       {ticket.isRemote && (
-                        <div className="text-[10px] text-violet-400 mt-1">
-                          À distance
+                        <div className="text-[10px] text-violet-400 mt-1 flex items-center justify-center gap-0.5">
+                          <Wifi className="w-2.5 h-2.5" />
                         </div>
                       )}
                       {index === 0 && (
-                        <div className="text-[10px] text-violet-300 mt-1 font-medium">
-                          SUIVANT
+                        <div className="text-[10px] text-violet-300 mt-1 font-medium uppercase tracking-wide">
+                          Suivant
                         </div>
                       )}
                     </div>
@@ -428,7 +431,63 @@ export default function QueueDashboardPage() {
             </div>
           </div>
         </div>
-      </main>
+
+        {/* Right sidebar - Today's activity */}
+        <div className="space-y-6">
+          {/* Summary card */}
+          <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
+            <h3 className="font-semibold text-white mb-4">Résumé du jour</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Traités</span>
+                <span className="text-white font-medium">
+                  {stats?.completed || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Absents</span>
+                <span className="text-white font-medium">
+                  {stats?.noShow || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">À distance</span>
+                <span className="text-white font-medium">
+                  {stats?.remote || 0}
+                </span>
+              </div>
+              <div className="h-px bg-white/5 my-2" />
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Temps service moy.</span>
+                <span className="text-white font-medium">
+                  {stats?.avgServiceTime || 0} min
+                </span>
+              </div>
+              {stats?.estimatedEndTime && (
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Fin estimée</span>
+                  <span className="text-violet-400 font-medium">
+                    {new Date(stats.estimatedEndTime).toLocaleTimeString(
+                      "fr-FR",
+                      { hour: "2-digit", minute: "2-digit" },
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick tips */}
+          <div className="bg-gradient-to-br from-violet-600/10 to-fuchsia-600/10 border border-violet-500/20 rounded-2xl p-6">
+            <h3 className="font-semibold text-white mb-3">Astuce</h3>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              Affichez l'écran de file sur une TV pour informer vos clients du
+              numéro en cours. Le QR code permet aux clients de rejoindre la
+              file à distance.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -17,6 +17,7 @@ import QueuePage from "@/pages/client/QueuePage";
 import TicketPage from "@/pages/client/TicketPage";
 import LoginPage from "@/pages/pro/LoginPage";
 import RegisterPage from "@/pages/pro/RegisterPage";
+import DashboardPage from "@/pages/pro/DashboardPage";
 import QueuesListPage from "@/pages/pro/QueuesListPage";
 import QueueDashboardPage from "@/pages/pro/QueueDashboardPage";
 import QRCodePage from "@/pages/pro/QRCodePage";
@@ -59,7 +60,8 @@ export default function App() {
 
         {/* Pro (protected) */}
         <Route element={<ProtectedRoutes />}>
-          <Route path="/dashboard" element={<QueuesListPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard/queues" element={<QueuesListPage />} />
           <Route path="/dashboard/:queueId" element={<QueueDashboardPage />} />
         </Route>
 
