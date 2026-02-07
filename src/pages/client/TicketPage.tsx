@@ -33,7 +33,7 @@ export default function TicketPage() {
       } catch (error) {
         toast.error("Ticket introuvable");
         console.error(error);
-        navigate(`/queue/${queueId}`);
+        navigate("/");
       } finally {
         setLoading(false);
       }
@@ -102,7 +102,7 @@ export default function TicketPage() {
           </p>
           <Button
             className="rounded-xl"
-            onClick={() => navigate(`/queue/${queueId}`)}
+            onClick={() => navigate(queueInfo?.slug ? `/q/${queueInfo.slug}` : "/")}
           >
             Retour à la file
           </Button>
@@ -234,7 +234,7 @@ export default function TicketPage() {
               className="w-full rounded-xl h-12 bg-gradient-primary"
               onClick={() => {
                 setMyTicket(null);
-                navigate(`/queue/${queueId}`);
+                navigate(queueInfo?.slug ? `/q/${queueInfo.slug}` : "/");
               }}
             >
               Prendre un nouveau ticket
@@ -243,7 +243,7 @@ export default function TicketPage() {
           <Button
             variant="outline"
             className="w-full rounded-xl h-12"
-            onClick={() => navigate(`/queue/${queueId}`)}
+            onClick={() => navigate(queueInfo?.slug ? `/q/${queueInfo.slug}` : "/")}
           >
             Retour à la file
           </Button>

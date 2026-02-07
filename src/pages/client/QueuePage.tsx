@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   getQueueBySlug,
+  getQueueInfo,
   takeTicket,
   type QueueInfo,
   type TicketInfo,
@@ -13,7 +14,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
 
 export default function QueuePage() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, id } = useParams<{ slug?: string; id?: string }>();
   const navigate = useNavigate();
   const [queueId, setQueueId] = useState<number | null>(null);
 
@@ -26,9 +27,14 @@ export default function QueuePage() {
   // Load queue info
   useEffect(() => {
     async function load() {
-      if (!slug) return;
+      if (!slug && !id) return;
       try {
-        const info = await getQueueBySlug(slug);
+        let info;
+        if (slug) {
+          info = await getQueueBySlug(slug);
+        } else {
+          info = await getQueueInfo(parseInt(id!, 10));
+        }
         setQueueInfo(info);
         setQueueId(info.id);
 
@@ -45,7 +51,7 @@ export default function QueuePage() {
       }
     }
     load();
-  }, [slug, setQueueInfo, setMyTicket]);
+  }, [slug, id, setQueueInfo, setMyTicket]);
 
   // WebSocket for real-time updates
   const handleWsMessage = useCallback(
