@@ -14,7 +14,7 @@ import ProLayout from "@/pages/pro/ProLayout";
 
 // Pages
 import QueuePage from "@/pages/client/QueuePage";
-import TicketPage from "@/pages/client/TicketPage";
+
 import LoginPage from "@/pages/pro/LoginPage";
 import RegisterPage from "@/pages/pro/RegisterPage";
 import DashboardPage from "@/pages/pro/DashboardPage";
@@ -52,8 +52,9 @@ export default function App() {
         {/* Public - Client queue access */}
         <Route path="/queue/:id" element={<QueuePage />} />
         <Route path="/q/:slug" element={<QueuePage />} />
-        <Route path="/q/:slug/ticket/:ticketId" element={<TicketPage />} />
-        <Route path="/queue/:id/ticket/:ticketId" element={<TicketPage />} />
+        {/* Redirect old ticket URLs to queue page */}
+        <Route path="/q/:slug/ticket/:ticketId" element={<QueuePage />} />
+        <Route path="/queue/:id/ticket/:ticketId" element={<QueuePage />} />
 
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
