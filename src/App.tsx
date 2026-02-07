@@ -52,6 +52,7 @@ export default function App() {
         {/* Public - Client queue access */}
         <Route path="/queue/:id" element={<QueuePage />} />
         <Route path="/q/:slug" element={<QueuePage />} />
+        <Route path="/q/:slug/ticket/:ticketId" element={<TicketPage />} />
         <Route path="/queue/:id/ticket/:ticketId" element={<TicketPage />} />
 
         {/* Auth */}

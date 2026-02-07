@@ -89,7 +89,8 @@ export default function QueuePage() {
       const ticket = await takeTicket(queueId, pushSubscription);
       setMyTicket(ticket);
       toast.success(`Ticket n°${ticket.number} obtenu !`);
-      navigate(`/queue/${queueId}/ticket/${ticket.id}`);
+      const ticketSlug = queueInfo?.slug || slug;
+      navigate(ticketSlug ? `/q/${ticketSlug}/ticket/${ticket.id}` : `/queue/${queueId}/ticket/${ticket.id}`);
     } catch (error) {
       toast.error("Erreur lors de la prise du ticket");
       console.error(error);
@@ -188,7 +189,7 @@ export default function QueuePage() {
                   variant="outline"
                   className="w-full rounded-xl"
                   onClick={() =>
-                    navigate(`/queue/${queueId}/ticket/${myTicket.id}`)
+                    navigate(queueInfo?.slug ? `/q/${queueInfo.slug}/ticket/${myTicket.id}` : `/queue/${queueId}/ticket/${myTicket.id}`)
                   }
                 >
                   Voir mon ticket

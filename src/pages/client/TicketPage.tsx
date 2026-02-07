@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   getTicketStatus,
   getQueueInfo,
+  getQueueBySlug,
   type TicketInfo,
   type QueueInfo,
 } from "@/api/queue";
@@ -12,24 +13,29 @@ import { useQueueStore } from "@/stores/queueStore";
 import { toast } from "sonner";
 
 export default function TicketPage() {
-  const { id, ticketId } = useParams<{ id: string; ticketId: string }>();
+  const { id, slug, ticketId } = useParams<{ id?: string; slug?: string; ticketId: string }>();
   const navigate = useNavigate();
-  const queueId = Number(id);
   const tId = Number(ticketId);
 
   const { queueInfo, setQueueInfo, myTicket, setMyTicket } = useQueueStore();
   const [loading, setLoading] = useState(true);
+  const [queueId, setQueueId] = useState<number>(0);
 
   // Load ticket and queue info
   useEffect(() => {
     async function load() {
       try {
-        const [ticket, queue] = await Promise.all([
-          getTicketStatus(queueId, tId),
-          getQueueInfo(queueId),
-        ]);
-        setMyTicket(ticket);
+        let queue: QueueInfo;
+        if (slug) {
+          queue = await getQueueBySlug(slug);
+        } else {
+          queue = await getQueueInfo(Number(id));
+        }
         setQueueInfo(queue);
+        setQueueId(queue.id);
+
+        const ticket = await getTicketStatus(queue.id, tId);
+        setMyTicket(ticket);
       } catch (error) {
         toast.error("Ticket introuvable");
         console.error(error);
@@ -39,7 +45,7 @@ export default function TicketPage() {
       }
     }
     load();
-  }, [queueId, tId, setMyTicket, setQueueInfo, navigate]);
+  }, [id, slug, tId, setMyTicket, setQueueInfo, navigate]);
 
   // WebSocket for real-time updates
   const handleWsMessage = useCallback(
