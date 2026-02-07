@@ -7,7 +7,6 @@ import {
   completeTicket,
   markNoShow,
   callNextTicket,
-  updateQueue,
   type ProfessionalQueue,
   type Ticket,
   type QueueStats,
@@ -25,8 +24,6 @@ import {
   Ticket as TicketIcon,
   Clock,
   TrendingUp,
-  Wifi,
-  WifiOff,
   ChevronRight,
 } from "lucide-react";
 
@@ -115,21 +112,6 @@ export default function QueueDashboardPage() {
   const handleNoShow = () => handleAction(markNoShow, "Client marqué absent");
   const handleCallNext = () =>
     handleAction(callNextTicket, "Ticket suivant appelé !");
-
-  const handleToggleRemoteBooking = async (current: boolean) => {
-    if (isNaN(queueId)) return;
-    try {
-      await updateQueue(queueId, { allowRemoteBooking: !current });
-      toast.success(
-        !current
-          ? "Réservation à distance activée"
-          : "Réservation à distance désactivée",
-      );
-      setQueue((q) => (q ? { ...q, allowRemoteBooking: !current } : null));
-    } catch (error) {
-      toast.error("Erreur");
-    }
-  };
 
   if (loading) {
     return (
@@ -270,37 +252,8 @@ export default function QueueDashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Current ticket card */}
           <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-white/5">
               <h2 className="font-semibold text-white">Ticket en cours</h2>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-2 text-sm text-gray-400">
-                  {queue.allowRemoteBooking ? (
-                    <>
-                      <Wifi className="w-4 h-4 text-emerald-400" />
-                      Réservation à distance
-                    </>
-                  ) : (
-                    <>
-                      <WifiOff className="w-4 h-4" />
-                      Sur place uniquement
-                    </>
-                  )}
-                </span>
-                <button
-                  onClick={() =>
-                    handleToggleRemoteBooking(queue.allowRemoteBooking)
-                  }
-                  className={`relative w-11 h-6 rounded-full transition-colors ${
-                    queue.allowRemoteBooking ? "bg-violet-600" : "bg-white/10"
-                  }`}
-                >
-                  <div
-                    className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform ${
-                      queue.allowRemoteBooking ? "left-6" : "left-1"
-                    }`}
-                  />
-                </button>
-              </div>
             </div>
 
             <div className="p-6">
@@ -315,11 +268,6 @@ export default function QueueDashboardPage() {
                       </span>
                     </div>
                   </div>
-                  {currentTicket?.isRemote && (
-                    <span className="inline-flex items-center gap-1 mt-3 px-2 py-1 rounded-full bg-violet-500/10 text-violet-400 text-xs">
-                      <Wifi className="w-3 h-3" />À distance
-                    </span>
-                  )}
                 </div>
 
                 {/* Action buttons */}
@@ -414,11 +362,6 @@ export default function QueueDashboardPage() {
                       >
                         {ticket.number}
                       </div>
-                      {ticket.isRemote && (
-                        <div className="text-[10px] text-violet-400 mt-1 flex items-center justify-center gap-0.5">
-                          <Wifi className="w-2.5 h-2.5" />
-                        </div>
-                      )}
                       {index === 0 && (
                         <div className="text-[10px] text-violet-300 mt-1 font-medium uppercase tracking-wide">
                           Suivant
@@ -450,12 +393,6 @@ export default function QueueDashboardPage() {
                   {stats?.noShow || 0}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">À distance</span>
-                <span className="text-white font-medium">
-                  {stats?.remote || 0}
-                </span>
-              </div>
               <div className="h-px bg-white/5 my-2" />
               <div className="flex items-center justify-between">
                 <span className="text-gray-400">Temps service moy.</span>
@@ -482,8 +419,8 @@ export default function QueueDashboardPage() {
             <h3 className="font-semibold text-white mb-3">Astuce</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
               Affichez l'écran de file sur une TV pour informer vos clients du
-              numéro en cours. Le QR code permet aux clients de rejoindre la
-              file à distance.
+              numéro en cours. Imprimez le QR code pour que vos clients puissent
+              prendre un ticket facilement.
             </p>
           </div>
         </div>

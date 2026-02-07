@@ -11,7 +11,6 @@ export interface QueueInfo {
   nextTicket: number;
   waitingCount: number;
   isActive?: boolean;
-  allowRemoteBooking?: boolean;
   avgWaitTime?: number;
 }
 
@@ -20,7 +19,6 @@ export interface QueueStats {
   completed: number;
   noShow: number;
   waiting: number;
-  remote: number;
   noShowRate: number;
   avgWaitTime: number;
   avgServiceTime: number;
@@ -46,7 +44,6 @@ export interface Ticket {
   status: TicketStatus;
   queueId: number;
   clientIp?: string;
-  isRemote: boolean;
   createdAt: string;
   calledAt?: string;
   completedAt?: string;
@@ -60,7 +57,6 @@ export interface ProfessionalQueue {
     currentNumber: number;
     nextTicket: number;
     isActive: boolean;
-    allowRemoteBooking: boolean;
   };
   currentTicket: Ticket | null;
   waitingTickets: Ticket[];
@@ -88,12 +84,10 @@ export async function getQueueBySlug(
 export async function takeTicket(
   queueId: number,
   pushSubscription?: string,
-  isRemote = false,
 ): Promise<TicketInfo> {
   return apiClient<TicketInfo>(`/api/queue/${queueId}/ticket`, {
     method: "POST",
     body: JSON.stringify({ pushSubscription }),
-    headers: isRemote ? { "x-remote-booking": "true" } : undefined,
   });
 }
 
@@ -120,7 +114,7 @@ export async function createQueue(name: string): Promise<QueueInfo> {
 
 export async function updateQueue(
   queueId: number,
-  updates: { name?: string; isActive?: boolean; allowRemoteBooking?: boolean },
+  updates: { name?: string; isActive?: boolean },
 ): Promise<void> {
   return apiClient(`/api/queue/${queueId}`, {
     method: "PATCH",
