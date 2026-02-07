@@ -187,7 +187,7 @@ export default function QueueDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/10 text-gray-300 hover:bg-white/5 gap-2"
+              className="bg-transparent border-white/10 text-gray-300 hover:bg-white/5 gap-2"
             >
               <QrCode className="w-4 h-4" />
               QR Code
@@ -197,7 +197,7 @@ export default function QueueDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/10 text-gray-300 hover:bg-white/5 gap-2"
+              className="bg-transparent border-white/10 text-gray-300 hover:bg-white/5 gap-2"
             >
               <Monitor className="w-4 h-4" />
               Écran

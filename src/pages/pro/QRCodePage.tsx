@@ -85,7 +85,7 @@ export default function QRCodePage() {
     <div className="min-h-screen bg-slate-900 p-4 text-white">
       <div className="max-w-md mx-auto space-y-6">
         {/* Back button */}
-        <Link to="/dashboard">
+        <Link to={`/dashboard/${queueId}`}>
           <Button
             variant="ghost"
             size="sm"
