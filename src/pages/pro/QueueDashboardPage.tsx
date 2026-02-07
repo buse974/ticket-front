@@ -24,7 +24,6 @@ import {
   Ticket as TicketIcon,
   Clock,
   TrendingUp,
-  ChevronRight,
 } from "lucide-react";
 
 export default function QueueDashboardPage() {
@@ -257,63 +256,80 @@ export default function QueueDashboardPage() {
             </div>
 
             <div className="p-6">
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                {/* Current number display */}
-                <div className="flex-shrink-0 text-center">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-3xl blur-2xl opacity-30" />
-                    <div className="relative w-32 h-32 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-3xl flex items-center justify-center">
-                      <span className="text-6xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
-                        {currentTicket?.number || "-"}
-                      </span>
-                    </div>
+              {/* Current number display */}
+              <div className="text-center mb-6">
+                <p className="text-sm text-gray-500 mb-2">
+                  {currentTicket ? "Client en cours" : "Aucun client en cours"}
+                </p>
+                <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-3xl blur-2xl opacity-30" />
+                  <div className="relative w-36 h-36 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-3xl flex items-center justify-center mx-auto">
+                    <span className="text-7xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+                      {currentTicket?.number || "-"}
+                    </span>
                   </div>
                 </div>
+              </div>
 
-                {/* Action buttons */}
-                <div className="flex-1 w-full space-y-3">
-                  {currentTicket ? (
-                    <>
-                      <button
-                        onClick={handleComplete}
-                        disabled={actionLoading}
-                        className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-                      >
-                        <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-4 group-hover:bg-emerald-500/10 transition-colors">
-                          <Check className="w-5 h-5" />
-                          <span className="font-semibold text-lg">Terminé</span>
-                        </div>
-                      </button>
-                      <button
-                        onClick={handleNoShow}
-                        disabled={actionLoading}
-                        className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-                      >
-                        <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-4 group-hover:bg-amber-500/10 transition-colors">
-                          <X className="w-5 h-5" />
-                          <span className="font-semibold text-lg">Absent</span>
-                        </div>
-                      </button>
-                    </>
-                  ) : (
+              {/* Action buttons */}
+              <div className="space-y-3">
+                {currentTicket ? (
+                  <>
                     <button
-                      onClick={handleCallNext}
-                      disabled={actionLoading || waitingTickets.length === 0}
-                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                      onClick={handleComplete}
+                      disabled={actionLoading}
+                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                     >
-                      <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-5 group-hover:bg-violet-500/10 transition-colors">
-                        <span className="font-semibold text-xl">
-                          {waitingTickets.length > 0
-                            ? "Appeler le suivant"
-                            : "Aucun en attente"}
-                        </span>
+                      <div className="relative flex flex-col items-center bg-[#09090B] rounded-2xl px-6 py-5 group-hover:bg-emerald-500/10 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Check className="w-6 h-6 text-emerald-400" />
+                          <span className="font-bold text-xl text-white">Client traité</span>
+                        </div>
                         {waitingTickets.length > 0 && (
-                          <ChevronRight className="w-5 h-5" />
+                          <span className="text-sm text-emerald-400/80 mt-1">
+                            Passer au client n°{waitingTickets[0].number}
+                          </span>
                         )}
                       </div>
                     </button>
-                  )}
-                </div>
+                    <button
+                      onClick={handleNoShow}
+                      disabled={actionLoading}
+                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                    >
+                      <div className="relative flex flex-col items-center bg-[#09090B] rounded-2xl px-6 py-5 group-hover:bg-amber-500/10 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <X className="w-6 h-6 text-amber-400" />
+                          <span className="font-bold text-xl text-white">Client absent</span>
+                        </div>
+                        {waitingTickets.length > 0 && (
+                          <span className="text-sm text-amber-400/80 mt-1">
+                            Passer au client n°{waitingTickets[0].number}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleCallNext}
+                    disabled={actionLoading || waitingTickets.length === 0}
+                    className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                  >
+                    <div className="relative flex flex-col items-center bg-[#09090B] rounded-2xl px-6 py-6 group-hover:bg-violet-500/10 transition-colors">
+                      <span className="font-bold text-xl text-white">
+                        {waitingTickets.length > 0
+                          ? `Appeler le client n°${waitingTickets[0].number}`
+                          : "Aucun client en attente"}
+                      </span>
+                      {waitingTickets.length > 0 && (
+                        <span className="text-sm text-violet-400/80 mt-1">
+                          {waitingTickets.length} en attente
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
           </div>
