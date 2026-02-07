@@ -5,6 +5,7 @@ import {
   getTicketStatus,
   getQueueInfo,
   getQueueBySlug,
+  cancelTicket,
   type TicketInfo,
   type QueueInfo,
 } from "@/api/queue";
@@ -20,6 +21,8 @@ export default function TicketPage() {
   const { queueInfo, setQueueInfo, myTicket, setMyTicket } = useQueueStore();
   const [loading, setLoading] = useState(true);
   const [queueId, setQueueId] = useState<number>(0);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Load ticket and queue info
   useEffect(() => {
@@ -117,9 +120,25 @@ export default function TicketPage() {
     );
   }
 
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      await cancelTicket(queueId, myTicket.id);
+      setMyTicket(null);
+      toast.success("Ticket annulé");
+      navigate(queueInfo?.slug ? `/q/${queueInfo.slug}` : "/");
+    } catch (error) {
+      toast.error("Erreur lors de l'annulation");
+      console.error(error);
+    } finally {
+      setCancelling(false);
+      setShowCancelConfirm(false);
+    }
+  };
+
   const isCurrent = myTicket.status === "current";
   const isDone =
-    myTicket.status === "completed" || myTicket.status === "no_show";
+    myTicket.status === "completed" || myTicket.status === "no_show" || myTicket.status === "cancelled";
 
   return (
     <div className="min-h-screen bg-gradient-mesh p-4 md:p-6">
@@ -253,6 +272,37 @@ export default function TicketPage() {
           >
             Retour à la file
           </Button>
+          {myTicket.status === "waiting" && !showCancelConfirm && (
+            <button
+              onClick={() => setShowCancelConfirm(true)}
+              className="w-full text-sm text-muted-foreground hover:text-destructive transition-colors py-2"
+            >
+              Annuler mon ticket
+            </button>
+          )}
+          {showCancelConfirm && (
+            <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 space-y-3">
+              <p className="text-sm text-foreground text-center">
+                Si vous annulez, vous devrez reprendre un ticket et repartir en fin de file.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => setShowCancelConfirm(false)}
+                >
+                  Non, garder
+                </Button>
+                <Button
+                  className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90 text-white"
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                >
+                  {cancelling ? "Annulation..." : "Oui, annuler"}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Info */}

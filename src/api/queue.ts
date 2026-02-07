@@ -1,7 +1,7 @@
 import { apiClient } from "./client";
 
 // Types
-export type TicketStatus = "waiting" | "current" | "completed" | "no_show";
+export type TicketStatus = "waiting" | "current" | "completed" | "no_show" | "cancelled";
 
 export interface QueueInfo {
   id: number;
@@ -185,6 +185,15 @@ export async function resetQueue(queueId: number): Promise<void> {
   return apiClient(`/api/queue/${queueId}/reset`, {
     method: "POST",
     auth: true,
+  });
+}
+
+export async function cancelTicket(
+  queueId: number,
+  ticketId: number,
+): Promise<{ success: boolean }> {
+  return apiClient(`/api/queue/${queueId}/ticket/${ticketId}/cancel`, {
+    method: "POST",
   });
 }
 
