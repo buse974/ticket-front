@@ -84,6 +84,12 @@ export default function QueuePage() {
           }
         }
       }
+      if (message.type === "ticket:completed" && message.payload) {
+        const payload = message.payload as Partial<TicketInfo>;
+        if (myTicket && payload.id === myTicket.id) {
+          setMyTicket({ ...myTicket, status: "completed" });
+        }
+      }
     },
     [updateFromWs, myTicket, setMyTicket],
   );
