@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   getQueueBySlug,
   getQueueInfo,
+  getTicketStatus,
   takeTicket,
   cancelTicket,
   type QueueInfo,
@@ -41,10 +42,21 @@ export default function QueuePage() {
         setQueueInfo(info);
         setQueueId(info.id);
 
-        // Check for existing ticket in localStorage
+        // Check for existing ticket in localStorage and verify with server
         const stored = loadTicketFromStorage();
         if (stored && stored.queueId === info.id) {
-          setMyTicket(stored);
+          try {
+            const fresh = await getTicketStatus(info.id, stored.id);
+            if (fresh.status === "completed" || fresh.status === "no_show" || fresh.status === "cancelled") {
+              // Ticket is done, clear localStorage
+              setMyTicket(null);
+            } else {
+              setMyTicket(fresh);
+            }
+          } catch {
+            // Ticket no longer exists on server, clear it
+            setMyTicket(null);
+          }
         }
       } catch (error) {
         toast.error("File introuvable");
