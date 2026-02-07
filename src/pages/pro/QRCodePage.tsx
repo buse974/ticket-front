@@ -1,32 +1,22 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getQRCodeData, type QRCodeData } from "@/api/queue";
-import { useAuthStore } from "@/stores/authStore";
+import { getQueueInfo, type QueueInfo } from "@/api/queue";
 import { toast } from "sonner";
 
 export default function QRCodePage() {
-  const navigate = useNavigate();
   const { queueId } = useParams<{ queueId: string }>();
-  const { isAuthenticated, professional } = useAuthStore();
-  const [data, setData] = useState<QRCodeData | null>(null);
+  const [data, setData] = useState<QueueInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    if (!queueId) {
-      navigate("/dashboard");
-      return;
-    }
+    if (!queueId) return;
     async function load() {
       try {
-        const qrData = await getQRCodeData(parseInt(queueId!, 10));
-        setData(qrData);
+        const queueData = await getQueueInfo(parseInt(queueId!, 10));
+        setData(queueData);
       } catch (error) {
         toast.error("Erreur de chargement");
         console.error(error);
@@ -35,9 +25,9 @@ export default function QRCodePage() {
       }
     }
     load();
-  }, [isAuthenticated, navigate, queueId]);
+  }, [queueId]);
 
-  const qrUrl = data ? `${window.location.origin}/q/${data.slug}` : null;
+  const qrUrl = data?.slug ? `${window.location.origin}/q/${data.slug}` : null;
 
   const handleDownload = () => {
     const svg = document.getElementById("qr-code");
@@ -55,7 +45,7 @@ export default function QRCodePage() {
       const pngUrl = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
       downloadLink.href = pngUrl;
-      downloadLink.download = `byewait-${data?.slug || "qrcode"}.png`;
+      downloadLink.download = `byewait-${data?.slug ?? "qrcode"}.png`;
       downloadLink.click();
     };
 
@@ -99,7 +89,7 @@ export default function QRCodePage() {
         <Card className="bg-slate-800 border-slate-700 print:bg-white print:border-none">
           <CardHeader className="text-center">
             <CardTitle className="text-slate-200 print:text-black">
-              {data?.name || professional?.name}
+              {data?.name}
             </CardTitle>
             <p className="text-slate-400 text-sm print:text-gray-600">
               Scannez pour prendre un ticket

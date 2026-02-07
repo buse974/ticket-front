@@ -1,67 +1,44 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { getProfessionalQueue } from "@/api/queue";
-import { useAuthStore } from "@/stores/authStore";
+import { useParams } from "react-router-dom";
+import { getQueueInfo } from "@/api/queue";
 import { useWebSocket, type WSMessage } from "@/hooks/useWebSocket";
 
 export default function DisplayPage() {
-  const navigate = useNavigate();
   const { queueId: queueIdParam } = useParams<{ queueId: string }>();
-  const { isAuthenticated } = useAuthStore();
   const [queueName, setQueueName] = useState<string>("");
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
   const [nextNumber, setNextNumber] = useState<number | null>(null);
   const [queueId, setQueueId] = useState<number | null>(null);
   const [waitingCount, setWaitingCount] = useState(0);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
+  const loadQueueData = useCallback(async (id: number) => {
+    try {
+      const data = await getQueueInfo(id);
+      setQueueName(data.name || "");
+      setCurrentNumber(data.currentNumber || null);
+      setWaitingCount(data.waitingCount);
+      setNextNumber(null);
+    } catch (error) {
+      console.error(error);
     }
-    if (!queueIdParam) {
-      navigate("/dashboard");
-      return;
-    }
+  }, []);
 
+  useEffect(() => {
+    if (!queueIdParam) return;
     const id = parseInt(queueIdParam, 10);
     setQueueId(id);
-
-    async function load() {
-      try {
-        const data = await getProfessionalQueue(id);
-        setQueueName(data.queue.name);
-        setCurrentNumber(data.currentTicket?.number || null);
-        setWaitingCount(data.waitingTickets.length);
-        if (data.waitingTickets.length > 0) {
-          setNextNumber(data.waitingTickets[0].number);
-        } else {
-          setNextNumber(null);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    }
-    load();
-  }, [isAuthenticated, navigate, queueIdParam]);
+    loadQueueData(id);
+  }, [queueIdParam, loadQueueData]);
 
   // WebSocket
   const handleWsMessage = useCallback(
     (message: WSMessage) => {
       if (message.type === "queue:update" || message.type === "ticket:called") {
         if (!queueId) return;
-        getProfessionalQueue(queueId).then((data) => {
-          setCurrentNumber(data.currentTicket?.number || null);
-          setWaitingCount(data.waitingTickets.length);
-          if (data.waitingTickets.length > 0) {
-            setNextNumber(data.waitingTickets[0].number);
-          } else {
-            setNextNumber(null);
-          }
-        });
+        loadQueueData(queueId);
       }
     },
-    [queueId],
+    [queueId, loadQueueData],
   );
 
   useWebSocket({
