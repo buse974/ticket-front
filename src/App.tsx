@@ -22,6 +22,7 @@ import QueuesListPage from "@/pages/pro/QueuesListPage";
 import QueueDashboardPage from "@/pages/pro/QueueDashboardPage";
 import QRCodePage from "@/pages/pro/QRCodePage";
 import DisplayPage from "@/pages/pro/DisplayPage";
+import SettingsPage from "@/pages/pro/SettingsPage";
 
 // Wrapper for protected routes with layout
 const ProtectedRoutes = () => (
@@ -64,6 +65,7 @@ export default function App() {
         <Route element={<ProtectedRoutes />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/queues" element={<QueuesListPage />} />
+          <Route path="/dashboard/settings" element={<SettingsPage />} />
           <Route path="/dashboard/:queueId" element={<QueueDashboardPage />} />
         </Route>
 

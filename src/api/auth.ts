@@ -40,3 +40,32 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
 export async function getMe(): Promise<Professional> {
   return apiClient<Professional>("/api/professional/me", { auth: true });
 }
+
+export async function updateProfile(data: {
+  name?: string;
+  email?: string;
+}): Promise<Professional> {
+  return apiClient<Professional>("/api/professional/me", {
+    method: "PUT",
+    auth: true,
+    body: JSON.stringify(data),
+  });
+}
+
+export async function changePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ success: boolean }> {
+  return apiClient<{ success: boolean }>("/api/professional/password", {
+    method: "PUT",
+    auth: true,
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAccount(): Promise<{ success: boolean }> {
+  return apiClient<{ success: boolean }>("/api/professional/me", {
+    method: "DELETE",
+    auth: true,
+  });
+}

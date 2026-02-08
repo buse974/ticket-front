@@ -7,6 +7,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isInitialized: boolean; // To check if storage has been checked
   setAuth: (token: string, professional: Professional) => void;
+  updateProfessional: (professional: Professional) => void;
   logout: () => void;
   loadFromStorage: () => void;
 }
@@ -21,6 +22,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem("token", token);
     localStorage.setItem("professional", JSON.stringify(professional));
     set({ token, professional, isAuthenticated: true });
+  },
+
+  updateProfessional: (professional) => {
+    localStorage.setItem("professional", JSON.stringify(professional));
+    set({ professional });
   },
 
   logout: () => {
