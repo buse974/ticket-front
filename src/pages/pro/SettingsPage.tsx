@@ -8,6 +8,9 @@ import { updateProfile, changePassword, deleteAccount } from "@/api/auth";
 import { toast } from "sonner";
 import { User, Lock, Trash2 } from "lucide-react";
 
+const inputClass =
+  "h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-violet-500/50 focus:ring-violet-500/20 rounded-xl";
+
 export default function SettingsPage() {
   const { professional, updateProfessional, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -78,42 +81,42 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Paramètres</h1>
+      <h1 className="text-2xl font-bold text-white">Paramètres</h1>
 
       {/* Profile Section */}
-      <div className="bg-card rounded-2xl p-6 shadow-sm">
+      <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+            <User className="w-5 h-5 text-violet-400" />
           </div>
-          <h2 className="text-lg font-semibold">Profil</h2>
+          <h2 className="text-lg font-semibold text-white">Profil</h2>
         </div>
         <form onSubmit={handleUpdateProfile} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nom de l'entreprise</Label>
+            <Label htmlFor="name" className="text-gray-300">Nom de l'entreprise</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-12 rounded-xl"
+              className={inputClass}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-300">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-12 rounded-xl"
+              className={inputClass}
               required
             />
           </div>
           <Button
             type="submit"
             disabled={savingProfile}
-            className="rounded-xl bg-gradient-primary hover:opacity-90"
+            className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-lg shadow-violet-500/25"
           >
             {savingProfile ? "Enregistrement..." : "Enregistrer"}
           </Button>
@@ -121,45 +124,45 @@ export default function SettingsPage() {
       </div>
 
       {/* Password Section */}
-      <div className="bg-card rounded-2xl p-6 shadow-sm">
+      <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Lock className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+            <Lock className="w-5 h-5 text-violet-400" />
           </div>
-          <h2 className="text-lg font-semibold">Mot de passe</h2>
+          <h2 className="text-lg font-semibold text-white">Mot de passe</h2>
         </div>
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+            <Label htmlFor="currentPassword" className="text-gray-300">Mot de passe actuel</Label>
             <Input
               id="currentPassword"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="h-12 rounded-xl"
+              className={inputClass}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+            <Label htmlFor="newPassword" className="text-gray-300">Nouveau mot de passe</Label>
             <Input
               id="newPassword"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="h-12 rounded-xl"
+              className={inputClass}
               minLength={6}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+            <Label htmlFor="confirmPassword" className="text-gray-300">Confirmer le mot de passe</Label>
             <Input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-12 rounded-xl"
+              className={inputClass}
               minLength={6}
               required
             />
@@ -167,7 +170,7 @@ export default function SettingsPage() {
           <Button
             type="submit"
             disabled={savingPassword}
-            className="rounded-xl bg-gradient-primary hover:opacity-90"
+            className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-lg shadow-violet-500/25"
           >
             {savingPassword ? "Modification..." : "Changer le mot de passe"}
           </Button>
@@ -175,42 +178,42 @@ export default function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-card rounded-2xl p-6 shadow-sm border border-destructive/20">
+      <div className="bg-white/[0.03] border border-red-500/20 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-            <Trash2 className="w-5 h-5 text-destructive" />
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-400" />
           </div>
-          <h2 className="text-lg font-semibold text-destructive">
+          <h2 className="text-lg font-semibold text-red-400">
             Zone danger
           </h2>
         </div>
-        <p className="text-muted-foreground text-sm mb-4">
+        <p className="text-gray-400 text-sm mb-4">
           La suppression de votre compte est irréversible. Toutes vos files
           d'attente, tickets et données seront définitivement supprimés.
         </p>
         {!showDeleteConfirm ? (
           <Button
             variant="outline"
-            className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
+            className="rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
             onClick={() => setShowDeleteConfirm(true)}
           >
             Supprimer mon compte
           </Button>
         ) : (
-          <div className="space-y-4 bg-destructive/5 rounded-xl p-4">
-            <p className="text-sm font-medium">
-              Tapez <span className="font-bold">SUPPRIMER</span> pour confirmer
+          <div className="space-y-4 bg-red-500/5 border border-red-500/10 rounded-xl p-4">
+            <p className="text-sm font-medium text-gray-300">
+              Tapez <span className="font-bold text-white">SUPPRIMER</span> pour confirmer
             </p>
             <Input
               value={deleteText}
               onChange={(e) => setDeleteText(e.target.value)}
               placeholder="SUPPRIMER"
-              className="h-12 rounded-xl"
+              className={inputClass}
             />
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl"
+                className="flex-1 rounded-xl border-white/10 text-gray-300 hover:bg-white/5"
                 onClick={() => {
                   setShowDeleteConfirm(false);
                   setDeleteText("");
@@ -219,7 +222,7 @@ export default function SettingsPage() {
                 Annuler
               </Button>
               <Button
-                className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90 text-white"
+                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white"
                 disabled={deleteText !== "SUPPRIMER" || deleting}
                 onClick={handleDeleteAccount}
               >
