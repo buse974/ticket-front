@@ -23,6 +23,9 @@ import QueueDashboardPage from "@/pages/pro/QueueDashboardPage";
 import QRCodePage from "@/pages/pro/QRCodePage";
 import DisplayPage from "@/pages/pro/DisplayPage";
 import SettingsPage from "@/pages/pro/SettingsPage";
+import ForgotPasswordPage from "@/pages/pro/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/pro/ResetPasswordPage";
+import NotFoundPage from "@/pages/NotFoundPage";
 
 // Wrapper for protected routes with layout
 const ProtectedRoutes = () => (
@@ -60,6 +63,8 @@ export default function App() {
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Pro (protected) */}
         <Route element={<ProtectedRoutes />}>
@@ -72,6 +77,9 @@ export default function App() {
         {/* Standalone Pro pages */}
         <Route path="/qrcode/:queueId" element={<QRCodePage />} />
         <Route path="/display/:queueId" element={<DisplayPage />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Toaster position="top-center" />
     </BrowserRouter>
