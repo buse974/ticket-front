@@ -83,3 +83,12 @@ export async function resetPassword(token: string, password: string): Promise<{ 
     body: JSON.stringify({ token, password }),
   });
 }
+
+export interface HourlyData {
+  hour: string;
+  tickets: number;
+}
+
+export async function getHourlyStats(): Promise<HourlyData[]> {
+  return apiClient<HourlyData[]>("/api/professional/stats/hourly", { auth: true });
+}

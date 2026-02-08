@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { getMyQueues, type QueueWithStats } from "@/api/queue";
+import { getHourlyStats, type HourlyData } from "@/api/auth";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import {
@@ -9,9 +10,9 @@ import {
   Clock,
   TrendingUp,
   ArrowUpRight,
-  ArrowDownRight,
   ListTodo,
   Activity,
+  RefreshCw,
 } from "lucide-react";
 import {
   AreaChart,
@@ -23,22 +24,20 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Mock data for chart - in real app this would come from API
-const generateChartData = () => {
-  const hours = [];
-  for (let i = 8; i <= 20; i++) {
-    hours.push({
-      hour: `${i}h`,
-      tickets: Math.floor(Math.random() * 15) + 2,
-    });
-  }
-  return hours;
-};
+function timeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return "à l'instant";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes === 1) return "il y a 1 min";
+  if (minutes < 60) return `il y a ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours === 1) return "il y a 1h";
+  return `il y a ${hours}h`;
+}
 
 interface StatsCardProps {
   title: string;
   value: string | number;
-  change?: number;
   icon: React.ElementType;
   iconColor: string;
   iconBg: string;
@@ -47,7 +46,6 @@ interface StatsCardProps {
 function StatsCard({
   title,
   value,
-  change,
   icon: Icon,
   iconColor,
   iconBg,
@@ -58,21 +56,6 @@ function StatsCard({
         <div>
           <p className="text-sm text-gray-400 mb-1">{title}</p>
           <p className="text-3xl font-bold text-white">{value}</p>
-          {change !== undefined && (
-            <div className="flex items-center gap-1 mt-2">
-              {change >= 0 ? (
-                <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <ArrowDownRight className="w-4 h-4 text-red-400" />
-              )}
-              <span
-                className={`text-sm font-medium ${change >= 0 ? "text-emerald-400" : "text-red-400"}`}
-              >
-                {Math.abs(change)}%
-              </span>
-              <span className="text-sm text-gray-500">vs hier</span>
-            </div>
-          )}
         </div>
         <div className={`p-3 rounded-xl ${iconBg}`}>
           <Icon className={`w-6 h-6 ${iconColor}`} />
@@ -85,18 +68,28 @@ function StatsCard({
 export default function DashboardPage() {
   const { isAuthenticated } = useAuthStore();
   const [queues, setQueues] = useState<QueueWithStats[]>([]);
+  const [chartData, setChartData] = useState<HourlyData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [chartData] = useState(generateChartData);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [, setTick] = useState(0);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
     try {
-      const data = await getMyQueues();
-      setQueues(data);
+      const [queuesData, hourlyData] = await Promise.all([
+        getMyQueues(),
+        getHourlyStats(),
+      ]);
+      setQueues(queuesData);
+      setChartData(hourlyData);
+      setLastUpdated(new Date());
     } catch (error) {
       toast.error("Erreur de chargement des données");
       console.error(error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -105,6 +98,12 @@ export default function DashboardPage() {
       loadData();
     }
   }, [isAuthenticated, loadData]);
+
+  // Update "il y a X min" every 30s
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Calculate aggregated stats
   const totalQueues = queues.length;
@@ -132,11 +131,23 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Vue d'ensemble</h1>
-        <p className="text-gray-400 mt-1">
-          Bienvenue ! Voici un résumé de votre activité.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Vue d'ensemble</h1>
+          <p className="text-gray-400 mt-1">
+            Bienvenue ! Voici un résumé de votre activité.
+          </p>
+        </div>
+        <button
+          onClick={() => loadData(true)}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm"
+        >
+          <RefreshCw
+            className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+          />
+          <span className="hidden sm:inline">{timeAgo(lastUpdated)}</span>
+        </button>
       </div>
 
       {/* Stats Grid */}
@@ -151,7 +162,6 @@ export default function DashboardPage() {
         <StatsCard
           title="Tickets aujourd'hui"
           value={totalTicketsToday}
-          change={12}
           icon={Ticket}
           iconColor="text-blue-400"
           iconBg="bg-blue-500/10"
@@ -166,7 +176,6 @@ export default function DashboardPage() {
         <StatsCard
           title="Taux no-show"
           value={`${avgNoShowRate}%`}
-          change={-3}
           icon={TrendingUp}
           iconColor="text-emerald-400"
           iconBg="bg-emerald-500/10"
@@ -182,59 +191,66 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold text-white">
                 Activité du jour
               </h2>
-              <p className="text-sm text-gray-400">Tickets traités par heure</p>
+              <p className="text-sm text-gray-400">Tickets par heure</p>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 text-sm text-gray-400">
               <Activity className="w-4 h-4" />
-              <span>Temps réel</span>
+              <span>{totalTicketsToday} tickets</span>
             </div>
           </div>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.05)"
-                />
-                <XAxis
-                  dataKey="hour"
-                  stroke="rgba(255,255,255,0.3)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="rgba(255,255,255,0.3)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1a1a1f",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
-                  }}
-                  labelStyle={{ color: "#fff" }}
-                  itemStyle={{ color: "#a78bfa" }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="tickets"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorTickets)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {totalTicketsToday === 0 ? (
+              <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                Aucun ticket aujourd'hui
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.05)"
+                  />
+                  <XAxis
+                    dataKey="hour"
+                    stroke="rgba(255,255,255,0.3)"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="rgba(255,255,255,0.3)"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1a1a1f",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
+                    }}
+                    labelStyle={{ color: "#fff" }}
+                    itemStyle={{ color: "#a78bfa" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="tickets"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorTickets)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -298,7 +314,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-white">Activité récente</h2>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-500">Dernières 24h</span>
+            <span className="text-sm text-gray-500">Aujourd'hui</span>
           </div>
         </div>
         <div className="space-y-3">
