@@ -23,6 +23,7 @@ import QueueDashboardPage from "@/pages/pro/QueueDashboardPage";
 import QRCodePage from "@/pages/pro/QRCodePage";
 import DisplayPage from "@/pages/pro/DisplayPage";
 import SettingsPage from "@/pages/pro/SettingsPage";
+import HistoryPage from "@/pages/pro/HistoryPage";
 import ForgotPasswordPage from "@/pages/pro/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/pro/ResetPasswordPage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -72,6 +73,10 @@ export default function App() {
           <Route path="/dashboard/queues" element={<QueuesListPage />} />
           <Route path="/dashboard/settings" element={<SettingsPage />} />
           <Route path="/dashboard/:queueId" element={<QueueDashboardPage />} />
+          <Route
+            path="/dashboard/:queueId/history"
+            element={<HistoryPage />}
+          />
         </Route>
 
         {/* Standalone Pro pages */}

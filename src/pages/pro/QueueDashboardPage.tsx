@@ -24,6 +24,7 @@ import {
   Ticket as TicketIcon,
   Clock,
   TrendingUp,
+  History,
 } from "lucide-react";
 
 export default function QueueDashboardPage() {
@@ -164,6 +165,16 @@ export default function QueueDashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link to={`/dashboard/${queue.id}/history`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-transparent border-white/10 text-gray-300 hover:bg-white/5 gap-2"
+            >
+              <History className="w-4 h-4" />
+              Historique
+            </Button>
+          </Link>
           <Link to={`/qrcode/${queue.id}`} target="_blank">
             <Button
               variant="outline"

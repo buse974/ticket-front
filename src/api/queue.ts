@@ -134,6 +134,77 @@ export async function getQueueStats(queueId: number): Promise<QueueStats> {
   return apiClient<QueueStats>(`/api/queue/${queueId}/stats`, { auth: true });
 }
 
+// History & Range stats
+
+export type StatsPeriod = "7d" | "30d";
+
+export interface DailyStat {
+  date: string; // YYYY-MM-DD
+  total: number;
+  completed: number;
+  noShow: number;
+  cancelled: number;
+  avgWaitTime: number; // seconds
+  avgServiceTime: number; // seconds
+}
+
+export interface StatsRange {
+  range: { from: string; to: string; period: StatsPeriod };
+  totals: {
+    totalTickets: number;
+    completed: number;
+    noShow: number;
+    cancelled: number;
+    avgWaitTime: number;
+    avgServiceTime: number;
+    noShowRate: number;
+  };
+  daily: DailyStat[];
+}
+
+export interface HistoricTicket {
+  id: number;
+  number: number;
+  status: TicketStatus;
+  createdAt: string;
+  calledAt: string | null;
+  completedAt: string | null;
+  isRemote: boolean;
+  waitTime: number | null; // seconds
+  serviceTime: number | null; // seconds
+}
+
+export interface QueueHistory {
+  tickets: HistoricTicket[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function getQueueStatsRange(
+  queueId: number,
+  period: StatsPeriod,
+): Promise<StatsRange> {
+  return apiClient<StatsRange>(
+    `/api/queue/${queueId}/stats?period=${period}`,
+    { auth: true },
+  );
+}
+
+export async function getQueueHistory(
+  queueId: number,
+  period: StatsPeriod,
+  opts: { limit?: number; offset?: number } = {},
+): Promise<QueueHistory> {
+  const params = new URLSearchParams({ period });
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.offset != null) params.set("offset", String(opts.offset));
+  return apiClient<QueueHistory>(
+    `/api/queue/${queueId}/history?${params.toString()}`,
+    { auth: true },
+  );
+}
+
 export async function getQueueTickets(queueId: number): Promise<Ticket[]> {
   return apiClient<Ticket[]>(`/api/queue/${queueId}/tickets`, { auth: true });
 }
