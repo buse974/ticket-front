@@ -34,7 +34,7 @@ export default function QueueDashboardPage() {
   const { isAuthenticated } = useAuthStore();
 
   const [queue, setQueue] = useState<ProfessionalQueue["queue"] | null>(null);
-  const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
+  const [currentTickets, setCurrentTickets] = useState<Ticket[]>([]);
   const [waitingTickets, setWaitingTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState<QueueStats | null>(null);
 
@@ -59,7 +59,7 @@ export default function QueueDashboardPage() {
         getQueueStats(queueId),
       ]);
       setQueue(queueData.queue);
-      setCurrentTicket(queueData.currentTicket);
+      setCurrentTickets(queueData.currentTickets);
       setWaitingTickets(queueData.waitingTickets);
       setStats(statsData);
     } catch (error) {
@@ -88,17 +88,15 @@ export default function QueueDashboardPage() {
     onMessage: handleWsMessage,
   });
 
-  const handleAction = async (
-    action: (id: number) => Promise<any>,
+  const runAction = async (
+    fn: () => Promise<{ stats?: QueueStats } | undefined>,
     successMessage: string,
   ) => {
     if (isNaN(queueId)) return;
     setActionLoading(true);
     try {
-      const result = await action(queueId);
-      if (result.currentTicket !== undefined)
-        setCurrentTicket(result.currentTicket);
-      if (result.stats) setStats(result.stats);
+      const result = await fn();
+      if (result?.stats) setStats(result.stats);
       toast.success(successMessage);
       await loadData();
     } catch (error) {
@@ -108,10 +106,18 @@ export default function QueueDashboardPage() {
     }
   };
 
-  const handleComplete = () => handleAction(completeTicket, "Client traité !");
-  const handleNoShow = () => handleAction(markNoShow, "Client marqué absent");
+  const handleComplete = (ticketId: number, withNext: boolean) =>
+    runAction(
+      () => completeTicket(queueId, ticketId, withNext),
+      "Client traité !",
+    );
+  const handleNoShow = (ticketId: number, withNext: boolean) =>
+    runAction(
+      () => markNoShow(queueId, ticketId, withNext),
+      "Client marqué absent",
+    );
   const handleCallNext = () =>
-    handleAction(callNextTicket, "Ticket suivant appelé !");
+    runAction(() => callNextTicket(queueId), "Ticket suivant appelé !");
 
   if (loading) {
     return (
@@ -260,68 +266,23 @@ export default function QueueDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Current ticket + Actions */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Current ticket card */}
+          {/* Current tickets card */}
           <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-white/5">
-              <h2 className="font-semibold text-white">Ticket en cours</h2>
+              <h2 className="font-semibold text-white">
+                Tickets en cours{" "}
+                <span className="text-gray-500 font-normal">
+                  ({currentTickets.length})
+                </span>
+              </h2>
             </div>
 
-            <div className="p-6">
-              {/* Current number display */}
-              <div className="text-center mb-6">
-                <p className="text-sm text-gray-500 mb-2">
-                  {currentTicket ? "Client en cours" : "Aucun client en cours"}
-                </p>
-                <div className="relative inline-block">
-                  <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-3xl blur-2xl opacity-30" />
-                  <div className="relative w-36 h-36 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-3xl flex items-center justify-center mx-auto">
-                    <span className="text-7xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
-                      {currentTicket?.number || "-"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="space-y-3">
-                {currentTicket ? (
-                  <>
-                    <button
-                      onClick={handleComplete}
-                      disabled={actionLoading}
-                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-                    >
-                      <div className="relative flex flex-col items-center bg-[#09090B] rounded-2xl px-6 py-5 group-hover:bg-emerald-500/10 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <Check className="w-6 h-6 text-emerald-400" />
-                          <span className="font-bold text-xl text-white">Client traité</span>
-                        </div>
-                        {waitingTickets.length > 0 && (
-                          <span className="text-sm text-emerald-400/80 mt-1">
-                            Passer au client n°{waitingTickets[0].number}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    <button
-                      onClick={handleNoShow}
-                      disabled={actionLoading}
-                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-                    >
-                      <div className="relative flex flex-col items-center bg-[#09090B] rounded-2xl px-6 py-5 group-hover:bg-amber-500/10 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <X className="w-6 h-6 text-amber-400" />
-                          <span className="font-bold text-xl text-white">Client absent</span>
-                        </div>
-                        {waitingTickets.length > 0 && (
-                          <span className="text-sm text-amber-400/80 mt-1">
-                            Passer au client n°{waitingTickets[0].number}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  </>
-                ) : (
+            <div className="p-6 space-y-6">
+              {currentTickets.length === 0 ? (
+                <div className="text-center">
+                  <p className="text-sm text-gray-500 mb-4">
+                    Aucun client en cours
+                  </p>
                   <button
                     onClick={handleCallNext}
                     disabled={actionLoading || waitingTickets.length === 0}
@@ -340,8 +301,111 @@ export default function QueueDashboardPage() {
                       )}
                     </div>
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {currentTickets.map((ticket) => {
+                      const hasNext = waitingTickets.length > 0;
+                      return (
+                        <div
+                          key={ticket.id}
+                          className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex flex-col items-center gap-4"
+                        >
+                          <div className="relative inline-block">
+                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl blur-2xl opacity-30" />
+                            <div className="relative w-28 h-28 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-2xl flex items-center justify-center">
+                              <span className="text-5xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+                                {ticket.number}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="w-full space-y-2">
+                            <button
+                              onClick={() => handleComplete(ticket.id, hasNext)}
+                              disabled={actionLoading}
+                              className="w-full group relative overflow-hidden rounded-xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                            >
+                              <div className="relative flex flex-col items-center bg-[#09090B] rounded-xl px-4 py-3 group-hover:bg-emerald-500/10 transition-colors">
+                                <div className="flex items-center gap-2">
+                                  <Check className="w-5 h-5 text-emerald-400" />
+                                  <span className="font-semibold text-white">
+                                    Traité
+                                  </span>
+                                </div>
+                                {hasNext && (
+                                  <span className="text-xs text-emerald-400/80 mt-0.5">
+                                    Passer au n°{waitingTickets[0].number}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => handleNoShow(ticket.id, hasNext)}
+                              disabled={actionLoading}
+                              className="w-full group relative overflow-hidden rounded-xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                            >
+                              <div className="relative flex flex-col items-center bg-[#09090B] rounded-xl px-4 py-3 group-hover:bg-amber-500/10 transition-colors">
+                                <div className="flex items-center gap-2">
+                                  <X className="w-5 h-5 text-amber-400" />
+                                  <span className="font-semibold text-white">
+                                    Absent
+                                  </span>
+                                </div>
+                                {hasNext && (
+                                  <span className="text-xs text-amber-400/80 mt-0.5">
+                                    Passer au n°{waitingTickets[0].number}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          </div>
+
+                          {hasNext && (
+                            <div className="w-full flex items-center justify-center gap-3 pt-1 text-xs">
+                              <button
+                                onClick={() =>
+                                  handleComplete(ticket.id, false)
+                                }
+                                disabled={actionLoading}
+                                className="text-gray-400 hover:text-gray-200 transition-colors disabled:opacity-50"
+                              >
+                                Traité sans suivant
+                              </button>
+                              <span className="text-gray-600">·</span>
+                              <button
+                                onClick={() => handleNoShow(ticket.id, false)}
+                                disabled={actionLoading}
+                                className="text-gray-400 hover:text-gray-200 transition-colors disabled:opacity-50"
+                              >
+                                Absent sans suivant
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {waitingTickets.length > 0 && (
+                    <button
+                      onClick={handleCallNext}
+                      disabled={actionLoading}
+                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                    >
+                      <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-4 group-hover:bg-violet-500/10 transition-colors">
+                        <span className="font-semibold text-white">
+                          Appeler suivant n°{waitingTickets[0].number}
+                        </span>
+                        <span className="text-sm text-violet-400/80">
+                          ({waitingTickets.length} en attente)
+                        </span>
+                      </div>
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

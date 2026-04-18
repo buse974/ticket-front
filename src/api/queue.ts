@@ -8,6 +8,7 @@ export interface QueueInfo {
   name?: string;
   slug?: string;
   currentNumber: number;
+  currentNumbers?: number[];
   nextTicket: number;
   waitingCount: number;
   isActive?: boolean;
@@ -58,7 +59,7 @@ export interface ProfessionalQueue {
     nextTicket: number;
     isActive: boolean;
   };
-  currentTicket: Ticket | null;
+  currentTickets: Ticket[];
   waitingTickets: Ticket[];
 }
 
@@ -221,20 +222,38 @@ export async function getProfessionalQueue(
 
 export async function completeTicket(
   queueId: number,
-): Promise<{ currentTicket: Ticket | null; stats: QueueStats }> {
-  return apiClient(`/api/queue/${queueId}/complete`, {
-    method: "POST",
-    auth: true,
-  });
+  ticketId: number,
+  withNext: boolean,
+): Promise<{
+  completedTicket: Ticket;
+  nextTicket: Ticket | null;
+  stats: QueueStats;
+}> {
+  return apiClient(
+    `/api/queue/${queueId}/ticket/${ticketId}/complete?next=${withNext}`,
+    {
+      method: "POST",
+      auth: true,
+    },
+  );
 }
 
 export async function markNoShow(
   queueId: number,
-): Promise<{ currentTicket: Ticket | null; stats: QueueStats }> {
-  return apiClient(`/api/queue/${queueId}/no-show`, {
-    method: "POST",
-    auth: true,
-  });
+  ticketId: number,
+  withNext: boolean,
+): Promise<{
+  noShowTicket: Ticket;
+  nextTicket: Ticket | null;
+  stats: QueueStats;
+}> {
+  return apiClient(
+    `/api/queue/${queueId}/ticket/${ticketId}/no-show?next=${withNext}`,
+    {
+      method: "POST",
+      auth: true,
+    },
+  );
 }
 
 export async function callNextTicket(

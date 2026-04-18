@@ -6,8 +6,7 @@ import { useWebSocket, type WSMessage } from "@/hooks/useWebSocket";
 export default function DisplayPage() {
   const { queueId: queueIdParam } = useParams<{ queueId: string }>();
   const [queueName, setQueueName] = useState<string>("");
-  const [currentNumber, setCurrentNumber] = useState<number | null>(null);
-  const [nextNumber, setNextNumber] = useState<number | null>(null);
+  const [currentNumbers, setCurrentNumbers] = useState<number[]>([]);
   const [queueId, setQueueId] = useState<number | null>(null);
   const [waitingCount, setWaitingCount] = useState(0);
 
@@ -15,9 +14,14 @@ export default function DisplayPage() {
     try {
       const data = await getQueueInfo(id);
       setQueueName(data.name || "");
-      setCurrentNumber(data.currentNumber || null);
+      const nums =
+        data.currentNumbers && data.currentNumbers.length > 0
+          ? data.currentNumbers
+          : data.currentNumber
+            ? [data.currentNumber]
+            : [];
+      setCurrentNumbers(nums);
       setWaitingCount(data.waitingCount);
-      setNextNumber(null);
     } catch (error) {
       console.error(error);
     }
@@ -68,24 +72,39 @@ export default function DisplayPage() {
         <span className="text-white/80 text-xl font-medium">{queueName}</span>
       </div>
 
-      {/* Current number */}
+      {/* Current numbers */}
       <div className="text-center mb-12">
         <p className="text-white/60 text-2xl md:text-3xl mb-4">
-          Numero en cours
+          {currentNumbers.length > 1 ? "Numeros en cours" : "Numero en cours"}
         </p>
-        <div className="text-transparent bg-clip-text bg-gradient-to-br from-violet-300 to-fuchsia-300 text-[12rem] md:text-[16rem] font-bold leading-none">
-          {currentNumber || "-"}
-        </div>
+        {currentNumbers.length <= 1 ? (
+          <div className="text-transparent bg-clip-text bg-gradient-to-br from-violet-300 to-fuchsia-300 text-[12rem] md:text-[16rem] font-bold leading-none">
+            {currentNumbers[0] ?? "-"}
+          </div>
+        ) : (
+          <div
+            className={`grid gap-x-10 md:gap-x-20 gap-y-4 justify-center ${
+              currentNumbers.length <= 4
+                ? "grid-cols-2"
+                : currentNumbers.length <= 9
+                  ? "grid-cols-3"
+                  : "grid-cols-4"
+            }`}
+          >
+            {currentNumbers.map((num, idx) => (
+              <div
+                key={`${num}-${idx}`}
+                className="text-transparent bg-clip-text bg-gradient-to-br from-violet-300 to-fuchsia-300 text-[8rem] md:text-[11rem] font-bold leading-none"
+              >
+                {num}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Next and waiting */}
+      {/* Waiting */}
       <div className="flex gap-16 md:gap-32">
-        <div className="text-center">
-          <p className="text-white/50 text-lg md:text-xl mb-2">Suivant</p>
-          <div className="text-white/80 text-6xl md:text-8xl font-semibold">
-            {nextNumber || "-"}
-          </div>
-        </div>
         <div className="text-center">
           <p className="text-white/50 text-lg md:text-xl mb-2">En attente</p>
           <div className="text-white/80 text-6xl md:text-8xl font-semibold">
