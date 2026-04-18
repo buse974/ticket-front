@@ -71,8 +71,21 @@ export default function ProLayout({ children }: { children: ReactNode }) {
       <aside
         className={`${
           sidebarCollapsed ? "w-[72px]" : "w-64"
-        } flex-shrink-0 border-r border-white/5 bg-[#0a0a0f] flex flex-col transition-all duration-300 ease-in-out`}
+        } relative flex-shrink-0 border-r border-white/5 bg-[#0a0a0f] flex flex-col transition-all duration-300 ease-in-out`}
       >
+        {/* Collapse toggle — floating on the right border */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          aria-label={sidebarCollapsed ? "Ouvrir le menu" : "Réduire le menu"}
+          className="absolute top-14 -right-3 z-10 w-6 h-6 rounded-full bg-[#0a0a0f] border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 hover:border-violet-500/40 transition-colors flex items-center justify-center shadow-md"
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5" />
+          )}
+        </button>
+
         {/* Logo */}
         <div className="h-16 flex items-center px-4 border-b border-white/5">
           <Link to="/dashboard" className="flex items-center gap-3">
@@ -136,17 +149,6 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Collapse button */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="m-3 p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors flex items-center justify-center"
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="w-5 h-5" />
-          ) : (
-            <ChevronLeft className="w-5 h-5" />
-          )}
-        </button>
       </aside>
 
       {/* Main Content */}
