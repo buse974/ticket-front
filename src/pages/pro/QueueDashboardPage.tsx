@@ -8,6 +8,7 @@ import {
   markNoShow,
   callNextTicket,
   callSpecificTicket,
+  takeTicket,
   type ProfessionalQueue,
   type Ticket,
   type QueueStats,
@@ -23,6 +24,7 @@ import {
   LayoutGrid,
   Tv,
   Activity,
+  UserPlus,
 } from "lucide-react";
 import type { ViewMode, QueueViewProps } from "./views/types";
 import QueueKanbanView from "./views/QueueKanbanView";
@@ -142,6 +144,20 @@ export default function QueueDashboardPage() {
       "Client appelé !",
     );
 
+  const handleCreateManualTicket = async () => {
+    if (isNaN(queueId)) return;
+    setActionLoading(true);
+    try {
+      const ticket = await takeTicket(queueId);
+      toast.success(`Ticket n°${ticket.number} créé`);
+      await loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -210,6 +226,20 @@ export default function QueueDashboardPage() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={handleCreateManualTicket}
+            disabled={actionLoading || !queue.isActive}
+            title={
+              queue.isActive
+                ? "Créer un ticket manuellement (ex: client au téléphone)"
+                : "File fermée"
+            }
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-semibold hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span className="hidden sm:inline">Nouveau ticket</span>
+          </button>
+
           {/* View switcher */}
           <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/5">
             {views.map((v) => {
