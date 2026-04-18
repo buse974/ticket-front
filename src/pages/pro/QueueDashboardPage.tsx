@@ -7,6 +7,7 @@ import {
   completeTicket,
   markNoShow,
   callNextTicket,
+  callSpecificTicket,
   type ProfessionalQueue,
   type Ticket,
   type QueueStats,
@@ -25,6 +26,7 @@ import {
   Clock,
   TrendingUp,
   History,
+  Plus,
 } from "lucide-react";
 
 export default function QueueDashboardPage() {
@@ -118,6 +120,11 @@ export default function QueueDashboardPage() {
     );
   const handleCallNext = () =>
     runAction(() => callNextTicket(queueId), "Ticket suivant appelé !");
+  const handleCallSpecific = (ticketId: number) =>
+    runAction(
+      () => callSpecificTicket(queueId, ticketId),
+      "Client appelé !",
+    );
 
   if (loading) {
     return (
@@ -270,7 +277,7 @@ export default function QueueDashboardPage() {
           <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-white/5">
               <h2 className="font-semibold text-white">
-                Tickets en cours{" "}
+                Sièges en cours{" "}
                 <span className="text-gray-500 font-normal">
                   ({currentTickets.length})
                 </span>
@@ -278,52 +285,64 @@ export default function QueueDashboardPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {currentTickets.length === 0 ? (
+              {currentTickets.length === 0 && waitingTickets.length > 0 ? (
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-4">
                     Aucun client en cours
                   </p>
                   <button
                     onClick={handleCallNext}
-                    disabled={actionLoading || waitingTickets.length === 0}
+                    disabled={actionLoading}
                     className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                   >
                     <div className="relative flex flex-col items-center bg-[#09090B] rounded-2xl px-6 py-6 group-hover:bg-violet-500/10 transition-colors">
                       <span className="font-bold text-xl text-white">
-                        {waitingTickets.length > 0
-                          ? `Appeler le client n°${waitingTickets[0].number}`
-                          : "Aucun client en attente"}
+                        Appeler le client n°{waitingTickets[0].number}
                       </span>
-                      {waitingTickets.length > 0 && (
-                        <span className="text-sm text-violet-400/80 mt-1">
-                          {waitingTickets.length} en attente
-                        </span>
-                      )}
+                      <span className="text-sm text-violet-400/80 mt-1">
+                        {waitingTickets.length} en attente
+                      </span>
                     </div>
                   </button>
                 </div>
               ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {currentTickets.map((ticket) => {
-                      const hasNext = waitingTickets.length > 0;
-                      return (
-                        <div
-                          key={ticket.id}
-                          className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex flex-col items-center gap-4"
-                        >
-                          <div className="relative inline-block">
-                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl blur-2xl opacity-30" />
-                            <div className="relative w-28 h-28 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-2xl flex items-center justify-center">
-                              <span className="text-5xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
-                                {ticket.number}
-                              </span>
-                            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {currentTickets.map((ticket) => {
+                    const hasNext = waitingTickets.length > 0;
+                    return (
+                      <div
+                        key={ticket.id}
+                        className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex flex-col items-center gap-4"
+                      >
+                        <div className="relative inline-block">
+                          <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl blur-2xl opacity-30" />
+                          <div className="relative w-28 h-28 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-2xl flex items-center justify-center">
+                            <span className="text-5xl font-bold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+                              {ticket.number}
+                            </span>
                           </div>
+                        </div>
 
-                          <div className="w-full space-y-2">
+                        <div className="w-full space-y-2">
+                          {hasNext ? (
                             <button
-                              onClick={() => handleComplete(ticket.id, hasNext)}
+                              onClick={() => handleComplete(ticket.id, true)}
+                              disabled={actionLoading}
+                              className="w-full group relative overflow-hidden rounded-xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                            >
+                              <div className="relative flex flex-col items-center bg-[#09090B] rounded-xl px-4 py-3 group-hover:bg-emerald-500/10 transition-colors">
+                                <div className="flex items-center gap-2">
+                                  <Check className="w-5 h-5 text-emerald-400" />
+                                  <span className="font-semibold text-white">
+                                    Traité + suivant n°
+                                    {waitingTickets[0].number}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleComplete(ticket.id, false)}
                               disabled={actionLoading}
                               className="w-full group relative overflow-hidden rounded-xl p-px bg-gradient-to-r from-emerald-500 to-green-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                             >
@@ -334,77 +353,66 @@ export default function QueueDashboardPage() {
                                     Traité
                                   </span>
                                 </div>
-                                {hasNext && (
-                                  <span className="text-xs text-emerald-400/80 mt-0.5">
-                                    Passer au n°{waitingTickets[0].number}
-                                  </span>
-                                )}
                               </div>
                             </button>
-                            <button
-                              onClick={() => handleNoShow(ticket.id, hasNext)}
-                              disabled={actionLoading}
-                              className="w-full group relative overflow-hidden rounded-xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-                            >
-                              <div className="relative flex flex-col items-center bg-[#09090B] rounded-xl px-4 py-3 group-hover:bg-amber-500/10 transition-colors">
-                                <div className="flex items-center gap-2">
-                                  <X className="w-5 h-5 text-amber-400" />
-                                  <span className="font-semibold text-white">
-                                    Absent
-                                  </span>
-                                </div>
-                                {hasNext && (
-                                  <span className="text-xs text-amber-400/80 mt-0.5">
-                                    Passer au n°{waitingTickets[0].number}
-                                  </span>
-                                )}
-                              </div>
-                            </button>
-                          </div>
+                          )}
 
                           {hasNext && (
-                            <div className="w-full flex items-center justify-center gap-3 pt-1 text-xs">
-                              <button
-                                onClick={() =>
-                                  handleComplete(ticket.id, false)
-                                }
-                                disabled={actionLoading}
-                                className="text-gray-400 hover:text-gray-200 transition-colors disabled:opacity-50"
-                              >
-                                Traité sans suivant
-                              </button>
-                              <span className="text-gray-600">·</span>
-                              <button
-                                onClick={() => handleNoShow(ticket.id, false)}
-                                disabled={actionLoading}
-                                className="text-gray-400 hover:text-gray-200 transition-colors disabled:opacity-50"
-                              >
-                                Absent sans suivant
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => handleComplete(ticket.id, false)}
+                              disabled={actionLoading}
+                              className="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-transparent px-4 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/10 transition-colors disabled:opacity-50"
+                            >
+                              <Check className="w-4 h-4" />
+                              Traité
+                            </button>
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
 
-                  {waitingTickets.length > 0 && (
-                    <button
-                      onClick={handleCallNext}
-                      disabled={actionLoading}
-                      className="w-full group relative overflow-hidden rounded-2xl p-px bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-                    >
-                      <div className="relative flex items-center justify-center gap-3 bg-[#09090B] rounded-2xl px-6 py-4 group-hover:bg-violet-500/10 transition-colors">
-                        <span className="font-semibold text-white">
-                          Appeler suivant n°{waitingTickets[0].number}
-                        </span>
-                        <span className="text-sm text-violet-400/80">
-                          ({waitingTickets.length} en attente)
-                        </span>
+                          <button
+                            onClick={() => handleNoShow(ticket.id, hasNext)}
+                            disabled={actionLoading}
+                            className="w-full group relative overflow-hidden rounded-xl p-px bg-gradient-to-r from-amber-500 to-orange-500 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                          >
+                            <div className="relative flex flex-col items-center bg-[#09090B] rounded-xl px-4 py-3 group-hover:bg-amber-500/10 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <X className="w-5 h-5 text-amber-400" />
+                                <span className="font-semibold text-white">
+                                  Absent
+                                </span>
+                              </div>
+                              {hasNext && (
+                                <span className="text-xs text-amber-400/80 mt-0.5">
+                                  Passer au n°{waitingTickets[0].number}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        </div>
                       </div>
-                    </button>
-                  )}
-                </>
+                    );
+                  })}
+
+                  {/* Add seat card */}
+                  <button
+                    onClick={handleCallNext}
+                    disabled={actionLoading || waitingTickets.length === 0}
+                    className="group bg-white/[0.01] border border-dashed border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 min-h-[220px] hover:border-violet-500/40 hover:bg-violet-500/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-violet-500/10 group-hover:border-violet-500/30 transition-colors">
+                      <Plus className="w-7 h-7 text-gray-400 group-hover:text-violet-300 transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-white">
+                        Ajouter un siège
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {waitingTickets.length > 0
+                          ? `Appeler n°${waitingTickets[0].number}`
+                          : "File vide"}
+                      </div>
+                    </div>
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -430,13 +438,16 @@ export default function QueueDashboardPage() {
               ) : (
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3">
                   {waitingTickets.map((ticket, index) => (
-                    <div
+                    <button
                       key={ticket.id}
-                      className={`relative group p-4 rounded-xl text-center transition-all duration-200 ${
+                      onClick={() => handleCallSpecific(ticket.id)}
+                      disabled={actionLoading}
+                      title={`Appeler le ticket n°${ticket.number}`}
+                      className={`relative group p-4 rounded-xl text-center transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-violet-500/50 hover:scale-105 transition-transform ${
                         index === 0
                           ? "bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30"
                           : "bg-white/[0.03] border border-white/5 hover:border-white/10"
-                      }`}
+                      } ${actionLoading ? "opacity-50 pointer-events-none" : ""}`}
                     >
                       {index === 0 && (
                         <div className="absolute -top-1 -right-1">
@@ -458,7 +469,7 @@ export default function QueueDashboardPage() {
                           Suivant
                         </div>
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

@@ -265,6 +265,16 @@ export async function callNextTicket(
   });
 }
 
+export async function callSpecificTicket(
+  queueId: number,
+  ticketId: number,
+): Promise<{ currentTicket: Ticket; stats: QueueStats }> {
+  return apiClient(`/api/queue/${queueId}/ticket/${ticketId}/call`, {
+    method: "POST",
+    auth: true,
+  });
+}
+
 export async function resetQueue(queueId: number): Promise<void> {
   return apiClient(`/api/queue/${queueId}/reset`, {
     method: "POST",
